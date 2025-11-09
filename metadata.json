@@ -1,0 +1,5 @@
+{
+  "name": "Copy of AI Movie Recommendation Agent",
+  "description": "An AI-powered movie recommendation agent that suggests films based on your current mood and thoughts. It provides detailed movie information, user reviews, and direct links to streaming platforms.",
+  "requestFramePermissions": []
+}
