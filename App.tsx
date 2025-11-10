@@ -5,7 +5,7 @@ import { getMovieTitles } from './services/geminiService';
 import { getMovieDataByTitle } from './services/tmdbService';
 import MovieCard from './components/MovieCard';
 import LoadingSpinner from './components/LoadingSpinner';
-import { MvIcon, SparklesIcon, RefreshIcon, LanguageIcon } from './components/Icons';
+import { MvIcon, SparklesIcon, RefreshIcon, LanguageIcon, WarningIcon } from './components/Icons';
 
 const allSuggestionPromptsZh = [
   "心情低落，想看点治愈的",
@@ -52,6 +52,9 @@ const uiText = {
     language: "中文",
     getRecommendations: "为我推荐",
     refreshRecommendations: "换一批推荐",
+    configErrorTitle: "配置错误",
+    configErrorMessage: "缺少 Gemini API 密钥，应用无法启动。",
+    configErrorInstruction: "请确认您的部署环境中已正确设置 API_KEY 环境变量。",
   },
   en: {
     subtitle: "Share your mood, thoughts, or desired genre, and I'll find the perfect movies for you.",
@@ -67,6 +70,9 @@ const uiText = {
     language: "English",
     getRecommendations: "Get Recommendations",
     refreshRecommendations: "Refresh recommendations",
+    configErrorTitle: "Configuration Error",
+    configErrorMessage: "The Gemini API key is missing. The application cannot start.",
+    configErrorInstruction: "Please ensure the API_KEY environment variable is set in your deployment environment.",
   }
 };
 
@@ -78,6 +84,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [suggestionPrompts, setSuggestionPrompts] = useState<string[]>([]);
   const [language, setLanguage] = useState<'zh' | 'en'>('zh');
+  const [apiKeyExists] = useState(!!process.env.API_KEY);
 
   const currentUiText = uiText[language];
   const currentPrompts = language === 'zh' ? allSuggestionPromptsZh : allSuggestionPromptsEn;
@@ -156,6 +163,23 @@ const App: React.FC = () => {
         setUserInput('');
         return newLang;
     });
+  }
+
+  if (!apiKeyExists) {
+    return (
+      <div className="min-h-screen text-gray-100 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md text-center bg-slate-900/50 p-8 rounded-xl border border-red-500/50 shadow-2xl shadow-red-500/10">
+          <WarningIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-red-400 mb-2">{currentUiText.configErrorTitle}</h1>
+          <p className="text-slate-300 mb-4">
+            {currentUiText.configErrorMessage}
+          </p>
+          <p className="text-slate-400 text-sm bg-slate-800/50 border border-slate-700 rounded-md p-3">
+            <code>{currentUiText.configErrorInstruction}</code>
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
