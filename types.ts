@@ -2,6 +2,7 @@
 export interface StreamingPlatform {
   name: string;
   url: string;
+  logoPath: string;
 }
 
 export interface UserReview {
@@ -19,5 +20,5 @@ export interface Movie {
   plotSummary: string;
   userReviews: UserReview[];
   streamingLinks: StreamingPlatform[];
-  posterUrl: string;
+  posterPath: string | null;
 }

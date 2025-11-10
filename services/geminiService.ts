@@ -1,6 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { Movie } from "../types";
 
+import { GoogleGenAI, Type } from "@google/genai";
+
+// API_KEY is automatically injected by the environment
 const API_KEY = process.env.API_KEY;
 
 if (!API_KEY) {
@@ -9,96 +10,43 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-const movieRecommendationSchema = {
+const movieTitlesSchema = {
   type: Type.ARRAY,
   items: {
     type: Type.OBJECT,
     properties: {
       title: { 
         type: Type.STRING, 
-        description: "The full original title of the movie." 
+        description: "The original title of the movie." 
       },
       year: { 
         type: Type.INTEGER, 
-        description: "The year the movie was released." 
+        description: "The release year of the movie." 
       },
-       posterUrl: {
-        type: Type.STRING,
-        description: "The full, complete, and valid URL for the movie's poster image from themoviedb.org, using the w500 size. Example: https://image.tmdb.org/t/p/w500/qA5kPYpshYvyC_d25K_7T2I4u24.jpg",
-      },
-      director: { 
-        type: Type.STRING, 
-        description: "The director of the movie." 
-      },
-      actors: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING },
-        description: "A list of the main actors in the movie."
-      },
-      tmdbRating: { 
-        type: Type.NUMBER, 
-        description: "The movie's rating on The Movie Database (TMDb), to one decimal place." 
-      },
-      plotSummary: { 
-        type: Type.STRING, 
-        description: "A concise plot summary of the movie." 
-      },
-      userReviews: {
-        type: Type.ARRAY,
-        description: "A list of 2-3 popular user reviews from themoviedb.org.",
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            username: {
-              type: Type.STRING,
-              description: "The username of the person who wrote the review."
-            },
-            date: {
-              type: Type.STRING,
-              description: "The date the review was posted, e.g., '2023-05-15'."
-            },
-            comment: {
-              type: Type.STRING,
-              description: "The text content of the user review."
-            }
-          },
-          required: ["username", "date", "comment"]
-        }
-      },
-      streamingLinks: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            name: { 
-              type: Type.STRING, 
-              description: "Name of the streaming platform (e.g., Netflix, 腾讯视频, 爱奇艺, Bilibili, 优酷, 芒果TV)." 
-            },
-            url: { 
-              type: Type.STRING, 
-              description: "A direct, valid URL to watch the movie on the platform." 
-            }
-          },
-          required: ["name", "url"]
-        },
-        description: "A list of platforms where the movie can be streamed."
-      }
     },
-    required: ["title", "year", "posterUrl", "director", "actors", "tmdbRating", "plotSummary", "userReviews", "streamingLinks"]
+    required: ["title", "year"]
   }
 };
 
+export interface MovieTitle {
+  title: string;
+  year: number;
+}
 
-export const getMovieRecommendations = async (prompt: string): Promise<Movie[]> => {
+export const getMovieTitles = async (prompt: string, language: 'zh' | 'en'): Promise<MovieTitle[]> => {
   try {
+    const langInstruction = language === 'zh' 
+      ? "The movie titles should be in their original language, but prioritize well-known Chinese films if relevant."
+      : "The movie titles should be in their original English language, or the most common English title.";
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `Based on the following mood and thoughts, please act as an expert movie recommendation agent. Recommend 2-3 relevant movies. For each movie, provide details sourced from The Movie Database (themoviedb.org), including its full poster image URL, TMDb rating, release year, director, main actors, and a few representative user reviews (with username and date). Additionally, please find direct links to watch it on major streaming platforms like Netflix, Tencent Video, iQIYI, Youku, Bilibili, or Mango TV.
+      contents: `Based on the user's request, suggest 3-4 movies. For each movie, provide only its original title and its release year. Do not provide any other information. ${langInstruction}
 
-User's input: "${prompt}"`,
+User's request: "${prompt}"`,
       config: {
         responseMimeType: "application/json",
-        responseSchema: movieRecommendationSchema,
+        responseSchema: movieTitlesSchema,
         temperature: 0.7,
       },
     });
@@ -106,16 +54,15 @@ User's input: "${prompt}"`,
     const jsonText = response.text.trim();
     const parsedData = JSON.parse(jsonText);
     
-    // Basic validation to ensure the response is an array
     if (!Array.isArray(parsedData)) {
       console.error("Gemini API did not return an array:", parsedData);
       throw new Error("Received an invalid format from the recommendation service.");
     }
 
-    return parsedData as Movie[];
+    return parsedData as MovieTitle[];
     
   } catch (error) {
-    console.error("Error fetching movie recommendations:", error);
+    console.error("Error fetching movie titles from Gemini:", error);
     throw new Error("Failed to get movie recommendations from the AI service.");
   }
 };
