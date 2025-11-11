@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "vercel-build": "vite build"
+    "preview-local": "npm run build && npx serve dist"
   },
   "dependencies": {
     "react": "^18.2.0",
