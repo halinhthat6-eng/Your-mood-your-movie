@@ -1,5 +1,3 @@
-console.log("Gemini key present:", !!process.env.API_KEY);
-
 export const config = {
   runtime: "edge",
 };
@@ -22,8 +20,9 @@ export default async function handler(req: Request) {
       });
     }
 
-    // ✅ 检查环境变量是否存在
     const apiKey = process.env.API_KEY;
+
+    // ✅ 检查环境变量
     if (!apiKey) {
       console.error("❌ Gemini API key not found in environment variables");
       return new Response(
@@ -35,42 +34,43 @@ export default async function handler(req: Request) {
       );
     }
 
-    // ✅ 调用 Gemini API
-    const geminiResponse = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `You are a movie recommendation expert. Based on the user's mood or request, suggest 3-4 movies. Respond only in valid JSON format as:
+    // ✅ 用 query 参数方式传递 key
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${encodeURIComponent(
+      apiKey
+    )}`;
+
+    const geminiResponse = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `You are a movie recommendation expert. Based on the user's request, suggest 3-4 movies. 
+Return ONLY valid JSON in this format:
 [
-  {"title": "Movie title", "year": 2020},
-  {"title": "Another movie", "year": 2018}
+  {"title": "Movie Title", "year": 2019},
+  {"title": "Another Film", "year": 2021}
 ]
-User's input: "${prompt}"
+User request: "${prompt}"
 Language: ${language === "zh" ? "Chinese" : "English"}`
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
+              },
+            ],
+          },
+        ],
+      }),
+    });
 
     if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error("❌ Gemini API error:", geminiResponse.status, errorText);
+      const errText = await geminiResponse.text();
+      console.error("❌ Gemini API error:", geminiResponse.status, errText);
+
       return new Response(
         JSON.stringify({
-          message: `Gemini API error: ${geminiResponse.status}`,
-          details: errorText,
+          message: "Gemini API request failed",
+          status: geminiResponse.status,
+          details: errText,
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
@@ -79,21 +79,21 @@ Language: ${language === "zh" ? "Chinese" : "English"}`
     const result = await geminiResponse.json();
     const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
 
-    let parsed;
+    let parsedMovies;
     try {
-      parsed = JSON.parse(text);
+      parsedMovies = JSON.parse(text);
     } catch (err) {
-      console.error("⚠️ Failed to parse Gemini response:", text);
+      console.error("⚠️ Gemini returned non-JSON response:", text);
       return new Response(
         JSON.stringify({
-          message: "Invalid response from Gemini API",
+          message: "Invalid response format from Gemini API",
           raw: text,
         }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    return new Response(JSON.stringify(parsed), {
+    return new Response(JSON.stringify(parsedMovies), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
