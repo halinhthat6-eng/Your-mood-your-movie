@@ -7,7 +7,11 @@
       "config": { "distDir": "dist" }
     },
     {
-      "src": "api/**/*.ts",
+      "src": "api/recommendations.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/gemini.js",
       "use": "@vercel/node"
     }
   ],
