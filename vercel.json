@@ -1,18 +1,15 @@
 {
   "version": 2,
+  "functions": {
+    "api/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "builds": [
     {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": { "distDir": "dist" }
-    },
-    {
-      "src": "api/recommendations.ts",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/gemini.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -20,4 +17,3 @@
     { "src": "/(.*)", "dest": "/dist/index.html" }
   ]
 }
-
