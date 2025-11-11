@@ -1,3 +1,5 @@
+console.log("Gemini key present:", !!process.env.API_KEY);
+
 export const config = {
   runtime: "edge",
 };
