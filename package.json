@@ -1,7 +1,7 @@
 {
-  "name": "copy-of-ai-movie-recommendation-agent",
+  "name": "ai-movie-recommendation-agent",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +10,8 @@
     "vercel-build": "vite build"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "@google/genai": "^1.29.0",
     "cross-fetch": "^4.0.0"
   },
@@ -22,3 +22,4 @@
     "vite": "^6.2.0"
   }
 }
+
