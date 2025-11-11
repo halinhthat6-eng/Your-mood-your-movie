@@ -6,7 +6,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "package.json",
+      "src": "vite.config.ts",
       "use": "@vercel/static-build",
       "config": { "distDir": "dist" }
     }
@@ -16,6 +16,7 @@
     { "src": "/(.*)", "dest": "/dist/$1" }
   ]
 }
+
 
 
 
