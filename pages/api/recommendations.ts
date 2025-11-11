@@ -1,27 +1,25 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+export const config = {
+  runtime: 'edge',
+};
 
-interface MovieTitle {
-  title: string;
-  year: number;
-}
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  // 仅允许 POST 请求
+export default async function handler(req: Request) {
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
-
-  const { prompt, language } = req.body;
-
-  if (!prompt) {
-    return res.status(400).json({ message: "Missing prompt" });
+    return new Response(JSON.stringify({ message: "Only POST requests allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
-    // 调用 Google Gemini API
+    const { prompt, language } = await req.json();
+
+    if (!prompt) {
+      return new Response(JSON.stringify({ message: "Missing prompt" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
       {
@@ -34,41 +32,33 @@ export default async function handler(
           contents: [
             {
               role: "user",
-              parts: [
-                {
-                  text: `请推荐 5 部${language === "zh" ? "中文" : "英文"}电影，主题是：${prompt}`,
-                },
-              ],
+              parts: [{ text: `请推荐 5 部${language === "zh" ? "中文" : "英文"}电影，主题是：${prompt}` }],
             },
           ],
         }),
       }
     );
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Gemini API Error:", errText);
-      return res.status(500).json({ message: "Gemini API request failed." });
-    }
-
     const data = await response.json();
 
-    // 从 Gemini 返回的文本中解析电影列表
-    const text =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
     const movies = text
       .split("\n")
-      .map((line: string) => line.replace(/^\d+\.\s*/, "").trim())
-      .filter((line: string) => line.length > 0)
-      .map((title: string) => ({ title, year: 0 })) as MovieTitle[];
+      .map(line => line.replace(/^\d+\.\s*/, "").trim())
+      .filter(Boolean)
+      .map(title => ({ title, year: 0 }));
 
-    return res.status(200).json(movies);
+    return new Response(JSON.stringify(movies), {
+      headers: { "Content-Type": "application/json" },
+    });
+
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error calling Gemini API." });
+    console.error("Gemini API Error:", error);
+    return new Response(JSON.stringify({ message: "Error calling Gemini API" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
+
 
