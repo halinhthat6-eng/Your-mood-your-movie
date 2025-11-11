@@ -25,10 +25,10 @@ User's request: "${prompt}"`
 
     const text = response.response.text().trim();
     const movies = JSON.parse(text);
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.status(200).json(movies);
   } catch (err) {
     console.error("Gemini API error:", err);
     res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 }
-
